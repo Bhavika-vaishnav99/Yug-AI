@@ -8,7 +8,7 @@ const ChatArea = ({ session, onSendMessage, isLoading }) => {
   const messagesEndRef = useRef(null);
 
   const suggestions = [
-    { text: 'Explain React state vs props in simple terms', category: 'Coding' },
+    { text: "How's the weather today?", category: 'Weather' },
     { text: 'Write a Node.js Express route to upload files', category: 'Backend' },
     { text: 'Design a glassmorphic card component using Vanilla CSS', category: 'Design' },
     { text: 'Create a MongoDB schema for a blog post with comments', category: 'Database' }
@@ -179,7 +179,7 @@ const ChatArea = ({ session, onSendMessage, isLoading }) => {
           <div className="welcome-inner">
             <MessageSquareCode size={48} className="welcome-icon text-gradient" />
             <h2 className="welcome-title text-gradient">Create or Select a conversation</h2>
-            <p className="welcome-subtitle">Start a session from the sidebar to chat with Gemini</p>
+            <p className="welcome-subtitle">Start a session from the sidebar to chat with YUG </p>
           </div>
         </div>
       ) : (
@@ -199,7 +199,7 @@ const ChatArea = ({ session, onSendMessage, isLoading }) => {
                     <Sparkles size={24} className="star-icon glow" />
                   </div>
                   <h3>What would you like to build today?</h3>
-                  <p>Ask anything. Gemini will process your chat history and deliver solutions.</p>
+                  <p>Ask anything. ChatBot will process your chat history and deliver solutions.</p>
                 </div>
 
                 <div className="suggestions-grid">

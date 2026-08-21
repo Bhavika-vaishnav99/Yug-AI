@@ -14,7 +14,7 @@ const Auth = ({ onAuthSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage(null);
-    
+
     // Simple checks
     if (!email.trim() || !password.trim() || (!isLogin && !name.trim())) {
       setErrorMessage('Please fill in all required fields.');
@@ -30,7 +30,7 @@ const Auth = ({ onAuthSuccess }) => {
 
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
-      const payload = isLogin 
+      const payload = isLogin
         ? { email: email.trim(), password }
         : { name: name.trim(), email: email.trim(), password };
 
@@ -67,7 +67,7 @@ const Auth = ({ onAuthSuccess }) => {
   return (
     <div className="auth-container">
       <div className="auth-glow"></div>
-      
+
       <div className="auth-card glass-effect">
         <div className="auth-header-logo">
           <div className="auth-logo-icon">
@@ -77,9 +77,9 @@ const Auth = ({ onAuthSuccess }) => {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
           <p className="auth-subtitle">
-            {isLogin 
-              ? 'Sign in to access your saved chat sessions' 
-              : 'Register to start chatting with Gemini AI'}
+            {isLogin
+              ? 'Sign in to access your saved chat sessions'
+              : 'Register to start chatting with YUG AI'}
           </p>
         </div>
 
@@ -156,9 +156,9 @@ const Auth = ({ onAuthSuccess }) => {
         <div className="auth-toggle-footer">
           <p>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button 
-              type="button" 
-              className="auth-toggle-link" 
+            <button
+              type="button"
+              className="auth-toggle-link"
               onClick={handleToggle}
               disabled={loading}
             >

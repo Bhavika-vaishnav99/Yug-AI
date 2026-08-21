@@ -8,7 +8,7 @@ const TypingIndicator = () => {
         <span className="dot"></span>
         <span className="dot"></span>
       </div>
-      <span className="typing-text">Gemini is thinking...</span>
+      <span className="typing-text">YUG is thinking...</span>
     </div>
   );
 };

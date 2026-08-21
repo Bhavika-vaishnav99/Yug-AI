@@ -27,15 +27,15 @@ const Sidebar = ({
             <Bot size={22} className="logo-bot-svg" />
           </div>
           <div>
-            <h1 className="logo-text">Gemini <span className="logo-badge">AI</span></h1>
-            <p className="logo-subtext">MERN Chatbot</p>
+            <h1 className="logo-text">YUG AI</h1>
+            <p className="logo-subtext">MERN Stack ChatBot </p>
           </div>
         </div>
       </div>
 
       <button className="new-chat-btn" onClick={onCreateSession}>
         <Plus size={18} />
-        <span>New conversation</span>
+        <span>New Chat</span>
       </button>
 
       <div className="sessions-list-container">
@@ -91,7 +91,7 @@ const Sidebar = ({
             </button>
           </div>
         )}
-        
+
         <div className="connection-status">
           <span className={`status-dot ${isDbConnected ? 'online' : 'offline'}`}></span>
           <span>{isDbConnected ? 'MongoDB Connected' : 'MongoDB Disconnected'}</span>

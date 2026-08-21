@@ -41,7 +41,7 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/sessions`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (res.status === 503) {
         setIsDbConnected(false);
         const data = await res.json();
@@ -52,12 +52,12 @@ function App() {
         handleLogout();
         throw new Error('Session expired. Please log in again.');
       }
-      
+
       if (!res.ok) throw new Error('Failed to retrieve chat sessions.');
       const data = await res.json();
       setSessions(data);
       setIsDbConnected(true);
-      
+
       if (shouldAutoSelect && data.length > 0) {
         setActiveSessionId(data[0]._id);
       }
@@ -81,7 +81,7 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/sessions/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (res.status === 503) {
         setIsDbConnected(false);
         const data = await res.json();
@@ -92,7 +92,7 @@ function App() {
         handleLogout();
         throw new Error('Session expired. Please log in again.');
       }
-      
+
       if (!res.ok) throw new Error('Failed to retrieve session message history.');
       const data = await res.json();
       setActiveSession(data);
@@ -108,13 +108,13 @@ function App() {
       setErrorMessage(null);
       const res = await fetch(`${API_BASE_URL}/sessions`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ title: 'New Conversation' })
+        body: JSON.stringify({ title: 'New Chat' })
       });
-      
+
       if (res.status === 503) {
         setIsDbConnected(false);
         const data = await res.json();
@@ -125,10 +125,10 @@ function App() {
         handleLogout();
         throw new Error('Session expired. Please log in again.');
       }
-      
+
       if (!res.ok) throw new Error('Failed to create new session.');
       const newSession = await res.json();
-      
+
       setSessions((prev) => [newSession, ...prev]);
       setActiveSessionId(newSession._id);
       setIsDbConnected(true);
@@ -145,7 +145,7 @@ function App() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (res.status === 503) {
         setIsDbConnected(false);
         const data = await res.json();
@@ -156,13 +156,13 @@ function App() {
         handleLogout();
         throw new Error('Session expired. Please log in again.');
       }
-      
+
       if (!res.ok) throw new Error('Failed to delete session.');
-      
+
       const updatedSessions = sessions.filter((s) => s._id !== id);
       setSessions(updatedSessions);
       setIsDbConnected(true);
-      
+
       // If we deleted the currently active session, switch to another or clear
       if (activeSessionId === id) {
         if (updatedSessions.length > 0) {
@@ -180,7 +180,7 @@ function App() {
 
   const handleSendMessage = async (messageText) => {
     if (!activeSessionId) return;
-    
+
     // Optimistically update the UI to show the user's message immediately
     const optimisticMessage = {
       _id: Date.now().toString(), // temporary ID
@@ -188,7 +188,7 @@ function App() {
       text: messageText,
       timestamp: new Date().toISOString()
     };
-    
+
     setActiveSession((prev) => {
       if (!prev) return null;
       return {
@@ -196,20 +196,20 @@ function App() {
         messages: [...prev.messages, optimisticMessage]
       };
     });
-    
+
     setIsLoading(true);
     setErrorMessage(null);
-    
+
     try {
       const res = await fetch(`${API_BASE_URL}/sessions/${activeSessionId}/chat`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ message: messageText })
       });
-      
+
       if (res.status === 503) {
         setIsDbConnected(false);
         const data = await res.json();
@@ -220,19 +220,19 @@ function App() {
         handleLogout();
         throw new Error('Session expired. Please log in again.');
       }
-      
+
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.error || 'Failed to get Gemini response.');
       }
-      
+
       const updatedSession = await res.json();
       setIsDbConnected(true);
-      
+
       // Sync the full state returned by the database (includes database message IDs and proper timestamps)
       setActiveSession(updatedSession);
-      
-      // Refresh the session list titles since the title might have been updated from 'New Conversation'
+
+      // Refresh the session list titles since the title might have been updated from 'New Chat'
       fetchSessions(false);
     } catch (err) {
       console.error(err);

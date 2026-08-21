@@ -46,7 +46,7 @@ const genAI = new GoogleGenerativeAI(apiKey || 'DUMMY_KEY');
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    
+
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Please enter all fields (name, email, password).' });
     }
@@ -169,14 +169,14 @@ app.post('/api/sessions', auth, async (req, res) => {
     const db = getDb();
     const { title } = req.body;
     const userId = new ObjectId(req.user.id);
-    
+
     const newSession = {
       userId,
-      title: title || 'New Conversation',
+      title: title || 'New Chat',
       messages: [],
       createdAt: new Date()
     };
-    
+
     const result = await db.collection('sessions').insertOne(newSession);
     const createdSession = {
       _id: result.insertedId,
@@ -193,11 +193,11 @@ app.get('/api/sessions/:id', auth, async (req, res) => {
   try {
     const db = getDb();
     const userId = new ObjectId(req.user.id);
-    const session = await db.collection('sessions').findOne({ 
+    const session = await db.collection('sessions').findOne({
       _id: new ObjectId(req.params.id),
-      userId: userId 
+      userId: userId
     });
-    
+
     if (!session) {
       return res.status(404).json({ error: 'Session not found or access denied.' });
     }
@@ -212,11 +212,11 @@ app.delete('/api/sessions/:id', auth, async (req, res) => {
   try {
     const db = getDb();
     const userId = new ObjectId(req.user.id);
-    const result = await db.collection('sessions').deleteOne({ 
+    const result = await db.collection('sessions').deleteOne({
       _id: new ObjectId(req.params.id),
       userId: userId
     });
-    
+
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Session not found or access denied.' });
     }
@@ -237,20 +237,20 @@ app.post('/api/sessions/:id/chat', auth, async (req, res) => {
     const db = getDb();
     const userId = new ObjectId(req.user.id);
     const sessionId = new ObjectId(req.params.id);
-    
-    const session = await db.collection('sessions').findOne({ 
+
+    const session = await db.collection('sessions').findOne({
       _id: sessionId,
-      userId: userId 
+      userId: userId
     });
-    
+
     if (!session) {
       return res.status(404).json({ error: 'Session not found or access denied.' });
     }
 
     // Double check Gemini Key
     if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ 
-        error: 'Gemini API Key is not configured on the server. Please check your backend .env file.' 
+      return res.status(500).json({
+        error: 'Gemini API Key is not configured on the server. Please check your backend .env file.'
       });
     }
 
@@ -261,9 +261,9 @@ app.post('/api/sessions/:id/chat', auth, async (req, res) => {
       timestamp: new Date()
     };
 
-    // If the session title is the default 'New Conversation', update it using the first message
+    // If the session title is the default 'New Chat', update it using the first message
     let updatedTitle = session.title;
-    if (session.title === 'New Conversation' && session.messages.length === 0) {
+    if (session.title === 'New Chat' && session.messages.length === 0) {
       const trimmedMessage = message.trim();
       updatedTitle = trimmedMessage.length > 30 ? trimmedMessage.substring(0, 27) + '...' : trimmedMessage;
     }
