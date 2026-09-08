@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, Trash2, Bot, Sparkles, LogOut } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, Bot, Sparkles, LogOut, X } from 'lucide-react';
 
 const Sidebar = ({
   sessions,
@@ -9,7 +9,9 @@ const Sidebar = ({
   onDeleteSession,
   isDbConnected,
   user,
-  onLogout
+  onLogout,
+  isOpen,
+  onClose
 }) => {
   // Helper to compute profile initials (e.g. "Bhavika Sharma" -> "BS")
   const getInitials = (name) => {
@@ -20,18 +22,27 @@ const Sidebar = ({
   };
 
   return (
-    <aside className="sidebar glass-effect">
-      <div className="sidebar-header">
-        <div className="logo-container">
-          <div className="logo-icon">
-            <Bot size={22} className="logo-bot-svg" />
+    <>
+      {/* Mobile Backdrop Overlay */}
+      <div
+        className={`sidebar-overlay ${isOpen ? 'show' : ''}`}
+        onClick={onClose}
+      />
+      <aside className={`sidebar glass-effect ${isOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="logo-container">
+            <div className="logo-icon">
+              <Bot size={22} className="logo-bot-svg" />
+            </div>
+            <div>
+              <h1 className="logo-text">YUG AI</h1>
+              <p className="logo-subtext">MERN Stack ChatBot </p>
+            </div>
           </div>
-          <div>
-            <h1 className="logo-text">YUG AI</h1>
-            <p className="logo-subtext">MERN Stack ChatBot </p>
-          </div>
+          <button className="sidebar-close-btn" onClick={onClose} title="Close Recent Chats">
+            <X size={20} />
+          </button>
         </div>
-      </div>
 
       <button className="new-chat-btn" onClick={onCreateSession}>
         <Plus size={18} />
@@ -98,7 +109,8 @@ const Sidebar = ({
         </div>
       </div>
     </aside>
-  );
+  </>
+);
 };
 
 export default Sidebar;

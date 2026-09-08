@@ -16,6 +16,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isDbConnected, setIsDbConnected] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Fetch all sessions on mount / token change
   useEffect(() => {
@@ -236,9 +237,28 @@ function App() {
       fetchSessions(false);
     } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || 'Error communicating with Gemini API.');
-      // Remove the optimistic message if it failed to send
-      fetchSessionDetails(activeSessionId);
+      const friendlyErr = err.message.includes('quota') || err.message.includes('429')
+        ? 'Gemini API rate limit exceeded. Please wait a few seconds and try again.'
+        : err.message || 'Error communicating with Gemini API.';
+
+      setErrorMessage(friendlyErr);
+
+      // Preserve user message and append helpful error bubble so text doesn't disappear
+      setActiveSession((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: [
+            ...prev.messages,
+            {
+              _id: 'err-' + Date.now(),
+              sender: 'model',
+              text: `⚠️ **Request Notice**: ${friendlyErr}`,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        };
+      });
     } finally {
       setIsLoading(false);
     }
@@ -292,17 +312,26 @@ function App() {
           <Sidebar
             sessions={sessions}
             activeSessionId={activeSessionId}
-            onSelectSession={setActiveSessionId}
-            onCreateSession={handleCreateSession}
+            onSelectSession={(id) => {
+              setActiveSessionId(id);
+              setIsSidebarOpen(false);
+            }}
+            onCreateSession={() => {
+              handleCreateSession();
+              setIsSidebarOpen(false);
+            }}
             onDeleteSession={handleDeleteSession}
             isDbConnected={isDbConnected}
             user={user}
             onLogout={handleLogout}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
           />
           <ChatArea
             session={activeSession}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
+            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
           />
         </>
       )}

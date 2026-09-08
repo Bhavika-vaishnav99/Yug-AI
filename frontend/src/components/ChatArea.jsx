@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Terminal, Copy, Check, MessageSquareCode } from 'lucide-react';
+import { Send, Sparkles, Terminal, Copy, Check, MessageSquareCode, FileText, BookOpen, Menu } from 'lucide-react';
 import TypingIndicator from './TypingIndicator';
 
-const ChatArea = ({ session, onSendMessage, isLoading }) => {
+const ChatArea = ({ session, onSendMessage, isLoading, onToggleSidebar }) => {
   const [input, setInput] = useState('');
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [ragStatus, setRagStatus] = useState(null);
   const messagesEndRef = useRef(null);
 
+  useEffect(() => {
+    fetch('/api/rag/status')
+      .then(res => res.json())
+      .then(data => setRagStatus(data))
+      .catch(err => console.error('Failed to fetch RAG status:', err));
+  }, []);
+
   const suggestions = [
+    { text: 'What FAQs are covered in the documentation?', category: 'RAG FAQ' },
     { text: "How's the weather today?", category: 'Weather' },
     { text: 'Write a Node.js Express route to upload files', category: 'Backend' },
-    { text: 'Design a glassmorphic card component using Vanilla CSS', category: 'Design' },
-    { text: 'Create a MongoDB schema for a blog post with comments', category: 'Database' }
+    { text: 'Design a glassmorphic card component using Vanilla CSS', category: 'Design' }
   ];
 
   const scrollToBottom = () => {
@@ -175,6 +183,10 @@ const ChatArea = ({ session, onSendMessage, isLoading }) => {
     <div className="chat-area">
       {!session ? (
         <div className="chat-welcome">
+          <button className="mobile-menu-btn welcome-menu-btn" onClick={onToggleSidebar} title="Recent Chats">
+            <Menu size={20} />
+            <span>Recent Chats</span>
+          </button>
           <div className="welcome-glow"></div>
           <div className="welcome-inner">
             <MessageSquareCode size={48} className="welcome-icon text-gradient" />
@@ -185,9 +197,20 @@ const ChatArea = ({ session, onSendMessage, isLoading }) => {
       ) : (
         <>
           <div className="chat-header glass-effect">
+            <button className="mobile-menu-btn" onClick={onToggleSidebar} title="Recent Chats">
+              <Menu size={20} />
+            </button>
             <div className="header-info">
               <h2 className="header-title">{session.title}</h2>
-              <span className="header-badge">Gemini-2.5-Flash</span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span className="header-badge">Gemini-2.5-Flash</span>
+                {ragStatus?.isIndexed && (
+                  <span className="header-badge" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <FileText size={12} />
+                    RAG Active ({ragStatus.documentName})
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

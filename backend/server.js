@@ -4,11 +4,21 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { HumanMessage, AIMessage } from '@langchain/core/messages';
+import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
 import connectDB, { getDb } from './config/db.js';
 import auth from './middleware/auth.js';
+import { initRAG, searchRAGContext, getRAGStatus } from './services/ragService.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dataDir = path.join(__dirname, 'data');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,12 +41,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize Gemini Client
+// Initialize LangChain RAG Service
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.warn('WARNING: GEMINI_API_KEY is not defined in the environment variables. Chat API calls will fail.');
 }
-const genAI = new GoogleGenerativeAI(apiKey || 'DUMMY_KEY');
+
+if (apiKey) {
+  initRAG(apiKey, dataDir).then(success => {
+    if (success) console.log('LangChain RAG Knowledge Base initialized successfully!');
+    else console.warn('LangChain RAG initialization finished with warnings.');
+  }).catch(err => console.error('LangChain RAG init error:', err));
+}
 
 // ==========================================================================
 // Authentication Routes
@@ -268,25 +284,75 @@ app.post('/api/sessions/:id/chat', auth, async (req, res) => {
       updatedTitle = trimmedMessage.length > 30 ? trimmedMessage.substring(0, 27) + '...' : trimmedMessage;
     }
 
-    // Map history to Gemini format (role: 'user' | 'model')
-    const formattedHistory = session.messages.map(msg => ({
-      role: msg.sender,
-      parts: [{ text: msg.text }]
-    }));
+    // Map history to LangChain messages format
+    const formattedHistory = session.messages.map(msg =>
+      msg.sender === 'user'
+        ? new HumanMessage(msg.text)
+        : new AIMessage(msg.text)
+    );
 
-    // Call Gemini API (using the verified gemini-2.5-flash model)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const chat = model.startChat({
-      history: formattedHistory
-    });
+    // Search RAG Context using LangChain VectorStore
+    const ragResult = await searchRAGContext(apiKey, message, 3);
+    let promptToSend = message;
 
-    const result = await chat.sendMessage(message);
-    const responseText = result.response.text();
+    if (ragResult.contextText) {
+      console.log(`[LangChain RAG] Found ${ragResult.matches.length} matching context chunks for user message.`);
+      promptToSend = `[Reference Knowledge Base]:
+${ragResult.contextText}
+
+[User Query]:
+${message}
+
+System Persona Instruction:
+Respond directly, naturally, and conversationally to the user using the reference knowledge.
+CRITICAL: Do NOT start your response with phrases like "Based on the provided context", "According to the document", or "Based on the knowledge base". Answer smoothly as a helpful assistant.`;
+    }
+
+    // Call Gemini via LangChain ChatGoogleGenerativeAI LCEL Chain with automatic model fallback
+    const candidateModels = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+    let responseText = '';
+    let usedModelName = 'gemini-2.5-flash';
+    let lastError = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        const chatModel = new ChatGoogleGenerativeAI({
+          model: modelName,
+          apiKey: process.env.GEMINI_API_KEY,
+        });
+
+        const promptTemplate = ChatPromptTemplate.fromMessages([
+          new MessagesPlaceholder('history'),
+          ['human', '{input}']
+        ]);
+
+        const chain = promptTemplate.pipe(chatModel).pipe(new StringOutputParser());
+
+        responseText = await chain.invoke({
+          history: formattedHistory,
+          input: promptToSend
+        });
+
+        usedModelName = modelName;
+        lastError = null;
+        break;
+      } catch (err) {
+        console.warn(`[LangChain Chat] Model ${modelName} call failed (${err.status || err.message}). Attempting fallback...`);
+        lastError = err;
+      }
+    }
+
+    if (lastError && !responseText) {
+      throw lastError;
+    }
 
     const modelMessage = {
       sender: 'model',
       text: responseText,
-      timestamp: new Date()
+      timestamp: new Date(),
+      modelName: usedModelName,
+      ragUsed: ragResult.matches.length > 0,
+      sourcesCount: ragResult.matches.length
     };
 
     // Save user/model messages and optional title updates
@@ -305,6 +371,11 @@ app.post('/api/sessions/:id/chat', auth, async (req, res) => {
     console.error('Chat routing error:', error);
     res.status(500).json({ error: error.message });
   }
+});
+
+// 8. Get RAG Status
+app.get('/api/rag/status', (req, res) => {
+  res.json(getRAGStatus());
 });
 
 // Start Server
