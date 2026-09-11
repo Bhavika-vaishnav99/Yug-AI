@@ -283,7 +283,7 @@ const ChatArea = ({ session, onSendMessage, isLoading, onToggleSidebar }) => {
               </button>
             </form>
             <div className="input-footer">
-              <span>Press Enter to send. Powered by MongoDB session history storage.</span>
+              <span>Yug-AI Chatbot can be inaccurate; please double-check its responses.</span>
             </div>
           </div>
         </>

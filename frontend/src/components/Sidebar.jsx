@@ -103,10 +103,6 @@ const Sidebar = ({
           </div>
         )}
 
-        <div className="connection-status">
-          <span className={`status-dot ${isDbConnected ? 'online' : 'offline'}`}></span>
-          <span>{isDbConnected ? 'MongoDB Connected' : 'MongoDB Disconnected'}</span>
-        </div>
       </div>
     </aside>
   </>
