@@ -7,6 +7,7 @@ const ChatArea = ({ session, onSendMessage, isLoading, onToggleSidebar }) => {
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [ragStatus, setRagStatus] = useState(null);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/rag/status')
@@ -30,11 +31,23 @@ const ChatArea = ({ session, onSendMessage, isLoading, onToggleSidebar }) => {
     scrollToBottom();
   }, [session?.messages, isLoading]);
 
+  // Keep cursor focused in input field when session changes or AI finishes responding
+  useEffect(() => {
+    if (!isLoading) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+    }
+  }, [isLoading, session?._id]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
     onSendMessage(input.trim());
     setInput('');
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
   const handleKeyDown = (e) => {
@@ -230,7 +243,10 @@ const ChatArea = ({ session, onSendMessage, isLoading, onToggleSidebar }) => {
                     <div
                       key={idx}
                       className="suggestion-card glass-effect"
-                      onClick={() => setInput(s.text)}
+                      onClick={() => {
+                        setInput(s.text);
+                        inputRef.current?.focus();
+                      }}
                     >
                       <span className="suggestion-category">{s.category}</span>
                       <p className="suggestion-text">{s.text}</p>
@@ -266,6 +282,8 @@ const ChatArea = ({ session, onSendMessage, isLoading, onToggleSidebar }) => {
           <div className="input-container glass-effect">
             <form onSubmit={handleSubmit} className="input-form">
               <textarea
+                ref={inputRef}
+                autoFocus
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
