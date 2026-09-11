@@ -30,6 +30,11 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// Health Check / Root route
+app.get('/', (req, res) => {
+  res.json({ message: 'Chatbot Backend API is running successfully!' });
+});
+
 // Verify Database Connection state middleware
 app.use((req, res, next) => {
   const db = getDb();
