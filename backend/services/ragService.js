@@ -62,7 +62,7 @@ class MemoryVectorStore extends VectorStore {
 
 let vectorStore = null;
 let isIndexed = false;
-let indexedDocName = 'FAQs.pdf';
+let indexedDocName = 'None';
 let chunkCount = 0;
 
 /**
@@ -83,17 +83,30 @@ async function extractPDFText(dataBuffer) {
 
 /**
  * Initializes RAG using LangChain components.
- * Loads FAQs.pdf, splits text using RecursiveCharacterTextSplitter,
+ * Scans dataDirPath for PDF files, splits text using RecursiveCharacterTextSplitter,
  * generates embeddings via GoogleGenerativeAIEmbeddings, and creates an in-memory vector store.
  */
 export async function initRAG(genAIOrKey, dataDirPath) {
   try {
-    const pdfPath = path.join(dataDirPath, 'FAQs.pdf');
-
-    if (!fs.existsSync(pdfPath)) {
-      console.warn(`[LangChain RAG] PDF file not found at ${pdfPath}`);
+    if (!fs.existsSync(dataDirPath)) {
+      console.log('[LangChain RAG] Data directory does not exist. Operating in standard Chatbot mode.');
       return false;
     }
+
+    const pdfFiles = fs.readdirSync(dataDirPath).filter(f => f.toLowerCase().endsWith('.pdf'));
+
+    if (pdfFiles.length === 0) {
+      console.log('[LangChain RAG] No PDF files found in data folder. Operating in standard Chatbot mode.');
+      vectorStore = null;
+      isIndexed = false;
+      indexedDocName = 'None';
+      chunkCount = 0;
+      return false;
+    }
+
+    const pdfName = pdfFiles[0];
+    const pdfPath = path.join(dataDirPath, pdfName);
+    indexedDocName = pdfName;
 
     console.log(`[LangChain RAG] Loading and parsing document: ${pdfPath}`);
     const dataBuffer = fs.readFileSync(pdfPath);
